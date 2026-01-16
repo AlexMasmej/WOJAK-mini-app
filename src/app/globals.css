@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --wojak-skin: #FFEFC3;
+  --wojak-outline: #2D2D2D;
+  --wojak-bg: #F5F5F5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Smooth transitions */
+.transition-smooth {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Drag and drop styles */
+.dropzone {
+  @apply border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center cursor-pointer;
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.dropzone:hover {
+  @apply border-gray-400 bg-gray-50;
+}
+
+.dropzone.active {
+  @apply border-blue-500 bg-blue-50;
+}
+
+.dropzone.has-file {
+  @apply border-solid border-gray-200 p-4;
+}
+
+/* Button styles */
+.btn-primary {
+  @apply bg-gray-900 text-white font-medium py-3 px-6 rounded-xl;
+  @apply transition-all duration-200 ease-in-out;
+  @apply hover:bg-gray-800 active:scale-[0.98];
+  @apply disabled:bg-gray-300 disabled:cursor-not-allowed disabled:active:scale-100;
+}
+
+.btn-secondary {
+  @apply bg-white text-gray-700 font-medium py-2.5 px-5 rounded-xl border border-gray-200;
+  @apply transition-all duration-200 ease-in-out;
+  @apply hover:bg-gray-50 hover:border-gray-300 active:scale-[0.98];
+}
+
+/* Slider styles */
+input[type="range"] {
+  @apply w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  @apply appearance-none w-5 h-5 bg-gray-900 rounded-full cursor-pointer;
+  @apply shadow-sm hover:bg-gray-700 transition-colors;
+}
+
+input[type="range"]::-moz-range-thumb {
+  @apply w-5 h-5 bg-gray-900 rounded-full cursor-pointer border-0;
+  @apply shadow-sm hover:bg-gray-700 transition-colors;
+}
+
+/* Toggle switch */
+.toggle-switch {
+  @apply relative inline-flex h-6 w-11 items-center rounded-full;
+  @apply transition-colors duration-200 ease-in-out;
+  @apply cursor-pointer;
+}
+
+.toggle-switch[data-state="checked"] {
+  @apply bg-gray-900;
+}
+
+.toggle-switch[data-state="unchecked"] {
+  @apply bg-gray-300;
+}
+
+.toggle-switch-thumb {
+  @apply pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg;
+  @apply transform transition duration-200 ease-in-out;
+}
+
+.toggle-switch[data-state="checked"] .toggle-switch-thumb {
+  @apply translate-x-5;
+}
+
+.toggle-switch[data-state="unchecked"] .toggle-switch-thumb {
+  @apply translate-x-0.5;
+}
+
+/* Loading animation */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+}
+
+.loading-pulse {
+  animation: pulse-ring 1.5s ease-in-out infinite;
+}
+
+/* Fade in animation */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}
+
+/* Image comparison slider */
+.comparison-slider {
+  @apply absolute inset-y-0 w-1 bg-white shadow-lg cursor-ew-resize;
+  @apply flex items-center justify-center;
+}
+
+.comparison-slider::before {
+  content: '';
+  @apply absolute w-8 h-8 bg-white rounded-full shadow-lg;
+  @apply flex items-center justify-center;
+}

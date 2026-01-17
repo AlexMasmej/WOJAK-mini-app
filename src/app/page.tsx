@@ -128,9 +128,42 @@ export default function Home() {
               )}
 
               {state === 'upload' && (
-                <p className="text-center text-gray-400 text-sm">
-                  Your photos are processed securely and never stored
-                </p>
+                <div className="text-center space-y-3">
+                  <p className="text-gray-400 text-sm">
+                    Your photos are processed securely and never stored
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
+                    <a
+                      href="https://jup.ag/tokens/8J69rbLTzWWgUJziFY8jeu5tDwEPBwUz4pKBMr5rpump"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-green-600 hover:text-green-700 font-medium transition-colors"
+                    >
+                      Buy $WOJAK
+                    </a>
+                    <span className="text-gray-300">•</span>
+                    <a
+                      href="https://x.com/wojakonx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                      Wojak on X
+                    </a>
+                    <span className="text-gray-300">•</span>
+                    <span className="text-gray-400">
+                      Made by{' '}
+                      <a
+                        href="https://x.com/alexmasmej"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-500 hover:text-gray-700 transition-colors"
+                      >
+                        @alexmasmej
+                      </a>
+                    </span>
+                  </div>
+                </div>
               )}
             </div>
           )}

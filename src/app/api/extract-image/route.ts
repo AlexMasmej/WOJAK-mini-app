@@ -6,9 +6,29 @@ export const maxDuration = 30;
 // Allowed hostnames for direct image URLs
 const ALLOWED_IMAGE_HOSTS = ['pbs.twimg.com', 'abs.twimg.com'];
 
-// Browser-like user agent for fetching tweets
-const BROWSER_UA =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+// User agent for API requests
+const API_UA = 'WOJAK-mini-app/1.0';
+
+// vxTwitter API response type
+interface VxTwitterResponse {
+  mediaURLs?: string[];
+  media_extended?: Array<{
+    type: string;
+    url: string;
+    thumbnail_url?: string;
+  }>;
+}
+
+// fxTwitter API response type
+interface FxTwitterResponse {
+  tweet?: {
+    media?: {
+      photos?: Array<{
+        url: string;
+      }>;
+    };
+  };
+}
 
 interface ExtractImageRequest {
   url: string;
@@ -75,46 +95,70 @@ function isTweetUrl(url: string): boolean {
 }
 
 /**
- * Extract image URL from tweet HTML using Open Graph meta tags
+ * Convert tweet URL to API URL format
+ * Extracts username and tweet ID from the URL
  */
-function extractImageFromHtml(html: string): string | null {
-  // Try og:image first (most reliable)
-  const ogImageMatch = html.match(
-    /<meta\s+(?:property|name)=["']og:image["']\s+content=["']([^"']+)["']/i
-  );
-  if (ogImageMatch?.[1]) {
-    return ogImageMatch[1];
+function getTweetApiUrls(tweetUrl: string): { vxTwitter: string; fxTwitter: string } | null {
+  try {
+    const parsed = new URL(tweetUrl);
+    // Extract /{username}/status/{id} pattern
+    const match = parsed.pathname.match(/^\/([^/]+)\/status\/(\d+)/);
+    if (!match) return null;
+
+    const [, username, tweetId] = match;
+    return {
+      vxTwitter: `https://api.vxtwitter.com/${username}/status/${tweetId}`,
+      fxTwitter: `https://api.fxtwitter.com/${username}/status/${tweetId}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Extract first image URL from vxTwitter API response
+ */
+function extractImageFromVxTwitter(data: VxTwitterResponse): string | null {
+  // Check media_extended first for more detail
+  if (data.media_extended && data.media_extended.length > 0) {
+    // Find the first image (not video)
+    const image = data.media_extended.find(m => m.type === 'image' || m.type === 'photo');
+    if (image?.url) {
+      return image.url;
+    }
+    // If no image, try video thumbnail
+    const video = data.media_extended.find(m => m.type === 'video');
+    if (video?.thumbnail_url) {
+      return video.thumbnail_url;
+    }
   }
 
-  // Also try content before property (different attribute order)
-  const ogImageAltMatch = html.match(
-    /<meta\s+content=["']([^"']+)["']\s+(?:property|name)=["']og:image["']/i
-  );
-  if (ogImageAltMatch?.[1]) {
-    return ogImageAltMatch[1];
-  }
-
-  // Try twitter:image as fallback
-  const twitterImageMatch = html.match(
-    /<meta\s+(?:property|name)=["']twitter:image["']\s+content=["']([^"']+)["']/i
-  );
-  if (twitterImageMatch?.[1]) {
-    return twitterImageMatch[1];
-  }
-
-  // Alt order for twitter:image
-  const twitterImageAltMatch = html.match(
-    /<meta\s+content=["']([^"']+)["']\s+(?:property|name)=["']twitter:image["']/i
-  );
-  if (twitterImageAltMatch?.[1]) {
-    return twitterImageAltMatch[1];
+  // Fallback to mediaURLs array
+  if (data.mediaURLs && data.mediaURLs.length > 0) {
+    // Find first image URL (ends with .jpg, .png, etc. or is from pbs.twimg.com)
+    const imageUrl = data.mediaURLs.find(url =>
+      url.includes('pbs.twimg.com') && !url.includes('.mp4') && !url.includes('/video/')
+    );
+    return imageUrl || null;
   }
 
   return null;
 }
 
 /**
- * Fetch tweet HTML and extract image URL
+ * Extract first image URL from fxTwitter API response
+ */
+function extractImageFromFxTwitter(data: FxTwitterResponse): string | null {
+  const photos = data.tweet?.media?.photos;
+  if (photos && photos.length > 0) {
+    return photos[0].url;
+  }
+  return null;
+}
+
+/**
+ * Fetch tweet data via third-party APIs and extract image URL
+ * Uses vxTwitter as primary and fxTwitter as fallback
  */
 async function extractImageFromTweet(tweetUrl: string): Promise<string> {
   // Validate tweet URL format
@@ -124,45 +168,64 @@ async function extractImageFromTweet(tweetUrl: string): Promise<string> {
     );
   }
 
-  // Fetch the tweet page
-  const response = await fetch(tweetUrl, {
-    headers: {
-      'User-Agent': BROWSER_UA,
-      Accept:
-        'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-      'Accept-Language': 'en-US,en;q=0.5',
-      'Cache-Control': 'no-cache',
-    },
-    redirect: 'follow',
-  });
+  // Get API URLs
+  const apiUrls = getTweetApiUrls(tweetUrl);
+  if (!apiUrls) {
+    throw new Error('Could not parse tweet URL');
+  }
 
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error('Tweet not found. It may have been deleted or made private.');
+  // Try vxTwitter API first
+  try {
+    const vxResponse = await fetch(apiUrls.vxTwitter, {
+      headers: {
+        'User-Agent': API_UA,
+        Accept: 'application/json',
+      },
+    });
+
+    if (vxResponse.ok) {
+      const data: VxTwitterResponse = await vxResponse.json();
+      const imageUrl = extractImageFromVxTwitter(data);
+      if (imageUrl) {
+        // Validate and normalize
+        if (!isAllowedImageHost(imageUrl)) {
+          console.warn(`Extracted image URL from unexpected host: ${imageUrl}`);
+        }
+        return normalizeToOriginalQuality(imageUrl);
+      }
     }
-    throw new Error(`Failed to fetch tweet (HTTP ${response.status})`);
+  } catch (error) {
+    console.warn('vxTwitter API failed:', error);
   }
 
-  const html = await response.text();
+  // Try fxTwitter API as fallback
+  try {
+    const fxResponse = await fetch(apiUrls.fxTwitter, {
+      headers: {
+        'User-Agent': API_UA,
+        Accept: 'application/json',
+      },
+    });
 
-  // Extract image from meta tags
-  const imageUrl = extractImageFromHtml(html);
-
-  if (!imageUrl) {
-    throw new Error(
-      'No image found in this tweet. The tweet may not contain an image, or Twitter blocked the request.'
-    );
+    if (fxResponse.ok) {
+      const data: FxTwitterResponse = await fxResponse.json();
+      const imageUrl = extractImageFromFxTwitter(data);
+      if (imageUrl) {
+        // Validate and normalize
+        if (!isAllowedImageHost(imageUrl)) {
+          console.warn(`Extracted image URL from unexpected host: ${imageUrl}`);
+        }
+        return normalizeToOriginalQuality(imageUrl);
+      }
+    }
+  } catch (error) {
+    console.warn('fxTwitter API failed:', error);
   }
 
-  // Validate the extracted URL is from Twitter's image CDN
-  if (!isAllowedImageHost(imageUrl)) {
-    // Still return it but log a warning - og:image might be a video thumbnail etc.
-    console.warn(
-      `Extracted image URL from unexpected host: ${imageUrl}`
-    );
-  }
-
-  return normalizeToOriginalQuality(imageUrl);
+  // If both APIs failed or returned no image
+  throw new Error(
+    'No image found in this tweet. The tweet may not contain an image, or it may be a video-only tweet.'
+  );
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<ExtractImageResponse>> {

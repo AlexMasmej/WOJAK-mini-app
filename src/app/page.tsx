@@ -7,6 +7,8 @@ import { WojakifySettings, WojakifyResponse } from '@/types';
 
 type AppState = 'upload' | 'ready' | 'processing' | 'result' | 'error';
 
+const WOJAK_IMAGE_URL = 'https://upload.wikimedia.org/wikipedia/en/c/cc/Wojak_cropped.jpg';
+
 const DEFAULT_SETTINGS: WojakifySettings = {
   archetype: 'neutral',
   simplifyBackground: true,
@@ -84,9 +86,16 @@ export default function Home() {
       {/* Header */}
       <header className="shrink-0 px-4 py-4 sm:py-6">
         <div className="max-w-lg mx-auto flex items-center justify-between">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-            Wojakify
-          </h1>
+          <div className="flex items-center gap-2">
+            <img
+              src={WOJAK_IMAGE_URL}
+              alt="Wojak"
+              className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
+            />
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              Wojakify
+            </h1>
+          </div>
           <Link
             href="/about"
             className="text-sm text-gray-500 hover:text-gray-700 transition-colors"

@@ -52,7 +52,7 @@ export class GeminiImagenStylizer extends BaseImageStylizer {
 
     return {
       imageBuffer: outputBuffer,
-      mimeType: 'image/webp',
+      mimeType: 'image/png',
     };
   }
 
@@ -173,7 +173,7 @@ Generate the Wojak-style image now.`,
 
     return output
       .resize(newWidth, newHeight, { fit: 'inside' })
-      .webp({ quality: 85 })
+      .png()
       .toBuffer();
   }
 }

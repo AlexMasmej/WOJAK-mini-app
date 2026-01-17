@@ -71,18 +71,37 @@ export class GeminiImagenStylizer extends BaseImageStylizer {
               },
             },
             {
-              text: `Transform this photo into a Wojak meme style illustration.
+              text: `You are a Wojak meme art generator. Your task is to REPLACE the face in this photo with a classic Wojak meme face and convert the entire image to Wojak art style.
+
+REFERENCE: The Wojak meme face has these features:
+- Pure white/off-white skin (#FFFFFF to #F5F5F5)
+- Simple black outline around the head
+- Eyes: oval shapes with small black dots for pupils
+- Nose: minimal, just 2-3 simple curved lines
+- Mouth: thin curved line (up for happy, down for sad, straight for neutral)
+- Eyebrows: thin curved black lines
+- Simple curved lines for any wrinkles or expression lines
+- NO realistic skin tones, NO complex shading
 
 ${prompt}
 
-Generate a new image that transforms the input photo into Wojak meme art style.`,
+IMPORTANT INSTRUCTIONS:
+1. The output MUST look like the classic Wojak meme drawings you see on the internet
+2. The face MUST be replaced with Wojak-style features (white skin, simple line art)
+3. Keep the EXACT same head angle, pose, and composition
+4. Keep all original colors for hair, clothes, background - ONLY make skin white
+5. Match the emotional expression using simple Wojak-style lines
+6. The person should still be recognizable by their hair, accessories, face shape, and body
+7. Convert the ENTIRE image to this flat, simple, hand-drawn meme style
+
+Generate the Wojak-style image now.`,
             },
           ],
         },
       ],
       generationConfig: {
         responseModalities: ['IMAGE', 'TEXT'],
-        temperature: 1,
+        temperature: 0.8,
       },
     };
 

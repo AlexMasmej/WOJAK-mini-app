@@ -220,7 +220,15 @@ export default function Home() {
       {/* Footer */}
       <footer className="shrink-0 px-4 py-4 text-center">
         <p className="text-xs text-gray-400">
-          Made for meme enthusiasts everywhere
+          Made by{' '}
+          <a
+            href="https://x.com/alexmasmej"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            @alexmasmej
+          </a>
         </p>
       </footer>
     </main>

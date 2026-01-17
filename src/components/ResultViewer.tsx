@@ -25,30 +25,36 @@ export default function ResultViewer({
     document.body.removeChild(link);
   }, [resultImage]);
 
-  const handleShare = useCallback(async () => {
-    if (navigator.share && navigator.canShare) {
-      try {
-        // Convert base64 to blob for sharing
-        const response = await fetch(`data:image/webp;base64,${resultImage}`);
-        const blob = await response.blob();
-        const file = new File([blob], 'wojakified.webp', { type: 'image/webp' });
+  const handleShareOnX = useCallback(async () => {
+    try {
+      // Convert base64 to blob and copy to clipboard
+      const response = await fetch(`data:image/webp;base64,${resultImage}`);
+      const blob = await response.blob();
 
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: 'My Wojakified Photo',
-            text: 'Check out my Wojak transformation!',
-          });
-          return;
+      // Try to copy image to clipboard
+      if (navigator.clipboard && 'write' in navigator.clipboard) {
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              [blob.type]: blob,
+            }),
+          ]);
+        } catch {
+          // Clipboard write failed, continue anyway
+          console.log('Could not copy image to clipboard');
         }
-      } catch (error) {
-        // Fall back to download if share fails
-        console.log('Share failed, falling back to download');
       }
+
+      // Open X with pre-filled text
+      const tweetText = encodeURIComponent('I just wojakified this picture @wojakonX');
+      window.open(`https://x.com/intent/tweet?text=${tweetText}`, '_blank');
+    } catch (error) {
+      console.log('Share on X failed:', error);
+      // Still try to open X
+      const tweetText = encodeURIComponent('I just wojakified this picture @wojakonX');
+      window.open(`https://x.com/intent/tweet?text=${tweetText}`, '_blank');
     }
-    // Fallback to download
-    handleDownload();
-  }, [resultImage, handleDownload]);
+  }, [resultImage]);
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -96,7 +102,13 @@ export default function ResultViewer({
 
       {/* Action buttons */}
       <div className="flex gap-3">
-        <button onClick={handleShare} className="btn-primary flex-1 flex items-center justify-center gap-2">
+        <button onClick={handleShareOnX} className="btn-primary flex-1 flex items-center justify-center gap-2">
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+          </svg>
+          Share on X
+        </button>
+        <button onClick={handleDownload} className="btn-secondary flex items-center justify-center gap-2">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
               strokeLinecap="round"
@@ -105,7 +117,7 @@ export default function ResultViewer({
               d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
             />
           </svg>
-          Download
+          Save
         </button>
         <button onClick={onReset} className="btn-secondary flex items-center justify-center gap-2">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -18,8 +18,8 @@ export default function ResultViewer({
   const handleDownload = useCallback(() => {
     // Create download link
     const link = document.createElement('a');
-    link.href = `data:image/webp;base64,${resultImage}`;
-    link.download = `wojakified-${Date.now()}.webp`;
+    link.href = `data:image/png;base64,${resultImage}`;
+    link.download = `wojakified-${Date.now()}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -28,7 +28,7 @@ export default function ResultViewer({
   const handleShareOnX = useCallback(async () => {
     try {
       // Convert base64 to blob and copy to clipboard
-      const response = await fetch(`data:image/webp;base64,${resultImage}`);
+      const response = await fetch(`data:image/png;base64,${resultImage}`);
       const blob = await response.blob();
 
       // Try to copy image to clipboard
@@ -61,7 +61,7 @@ export default function ResultViewer({
       {/* Image display */}
       <div className="relative aspect-square sm:aspect-[4/3] w-full rounded-2xl overflow-hidden bg-white border border-gray-200">
         <img
-          src={showOriginal ? originalImage : `data:image/webp;base64,${resultImage}`}
+          src={showOriginal ? originalImage : `data:image/png;base64,${resultImage}`}
           alt={showOriginal ? 'Original photo' : 'Wojakified result'}
           className="w-full h-full object-contain"
         />

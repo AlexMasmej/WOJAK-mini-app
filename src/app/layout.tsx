@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 
 const WOJAK_IMAGE_URL = 'https://upload.wikimedia.org/wikipedia/en/c/cc/Wojak_cropped.jpg';
@@ -52,6 +53,7 @@ export default function RootLayout({
         <div className="min-h-screen min-h-[100dvh] flex flex-col">
           {children}
         </div>
+        <Analytics />
       </body>
     </html>
   );

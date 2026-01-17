@@ -23,12 +23,12 @@ export class GeminiImagenStylizer extends BaseImageStylizer {
   async stylize(input: ImageStylizerInput): Promise<ImageStylizerOutput> {
     const prompt = this.buildWojakPrompt(input.settings);
 
-    // Prepare the image - convert to PNG and resize if needed
+    // Prepare the image - resize and compress to reduce API costs
     let processedImage = sharp(input.imageBuffer);
     const metadata = await processedImage.metadata();
 
-    // Resize to max 1024px on long edge for processing
-    const maxDimension = 1024;
+    // Resize to max 768px on long edge - sufficient for Wojak-style output
+    const maxDimension = 768;
     if (metadata.width && metadata.height) {
       const scale = Math.min(maxDimension / Math.max(metadata.width, metadata.height), 1);
       if (scale < 1) {
@@ -40,9 +40,9 @@ export class GeminiImagenStylizer extends BaseImageStylizer {
       }
     }
 
-    // Convert to PNG for the API
-    const pngBuffer = await processedImage.png().toBuffer();
-    const imageBase64 = pngBuffer.toString('base64');
+    // Convert to JPEG at 85% quality - 60-80% smaller than PNG, reduces API input costs
+    const jpegBuffer = await processedImage.jpeg({ quality: 85 }).toBuffer();
+    const imageBase64 = jpegBuffer.toString('base64');
 
     // Call Gemini API (Google AI Studio)
     const result = await this.callGeminiAPI(imageBase64, prompt);
@@ -67,7 +67,7 @@ export class GeminiImagenStylizer extends BaseImageStylizer {
           parts: [
             {
               inlineData: {
-                mimeType: 'image/png',
+                mimeType: 'image/jpeg',
                 data: imageBase64,
               },
             },

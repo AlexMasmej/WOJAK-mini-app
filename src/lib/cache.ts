@@ -11,10 +11,11 @@ interface CacheEntry {
 class ImageCache {
   private store: Map<string, CacheEntry> = new Map();
   private ttlMs: number;
-  private maxSize: number = 100; // Maximum number of cached images
+  private maxSize: number = 500; // Maximum number of cached images
 
   constructor() {
-    const ttlSeconds = parseInt(process.env.CACHE_TTL_SECONDS || '300', 10);
+    // Default 24 hours - same image+settings = same result, no need to regenerate
+    const ttlSeconds = parseInt(process.env.CACHE_TTL_SECONDS || '86400', 10);
     this.ttlMs = ttlSeconds * 1000;
 
     // Clean up expired entries every 30 seconds

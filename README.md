@@ -7,11 +7,14 @@ Transform your photos into Wojak-style meme illustrations. A mobile-first web ap
 ## Features
 
 - **Instant Transformation**: Upload a photo and get a Wojak-style illustration in seconds
+- **Tweet Image Extraction**: Paste a tweet URL to extract and wojakify the image (beta)
 - **4 Archetypes**: Choose from Neutral Wojak, Doomer, NPC, or Chad styles
 - **Customizable**: Adjust identity preservation and background simplification
 - **Mobile-First**: Optimized for mobile browsers with touch-friendly UI
 - **Privacy-Focused**: Images processed in memory, never stored
 - **Download & Share**: Save your creation as WebP or share directly
+
+> **Note:** Tweet URL extraction is best-effort without the X API. If extraction fails, paste the image URL directly (right-click the image on X, copy image address) or upload the image manually.
 
 ## Tech Stack
 
@@ -197,6 +200,47 @@ Transform an image to Wojak style.
 - Default: 10 requests per minute per IP
 - Headers: `X-RateLimit-Remaining`, `Retry-After`
 
+### POST /api/extract-image
+
+Extract image URL from a tweet or validate a direct image URL.
+
+**Request:**
+- Content-Type: `application/json`
+- Body:
+  ```json
+  {
+    "url": "https://x.com/user/status/123...",
+    "mode": "tweet"
+  }
+  ```
+  - `mode`: `"tweet"` to extract from tweet HTML, or `"image"` to validate a direct image URL
+
+**Response:**
+```json
+{
+  "success": true,
+  "imageUrl": "https://pbs.twimg.com/media/..."
+}
+```
+
+**Notes:**
+- Tweet extraction parses `og:image` and `twitter:image` meta tags from the tweet page
+- Direct image URLs must be from `pbs.twimg.com` or `abs.twimg.com`
+- Images are normalized to original quality when possible
+
+### GET /api/image-proxy
+
+Proxy images from Twitter's CDN to handle CORS.
+
+**Request:**
+- Query: `?url=https://pbs.twimg.com/media/...`
+
+**Response:**
+- Streams the image bytes with appropriate content-type
+- Maximum size: 10MB
+
+**Allowed hosts:** `pbs.twimg.com` only
+
 ## Cost Considerations
 
 ### Vertex AI Pricing (Approximate)
@@ -223,8 +267,12 @@ Transform an image to Wojak style.
 src/
 ├── app/
 │   ├── api/
-│   │   └── wojakify/
-│   │       └── route.ts      # API endpoint
+│   │   ├── wojakify/
+│   │   │   └── route.ts      # Image transformation API
+│   │   ├── extract-image/
+│   │   │   └── route.ts      # Tweet/image URL extraction API
+│   │   └── image-proxy/
+│   │       └── route.ts      # Image proxy for CORS
 │   ├── about/
 │   │   └── page.tsx          # About page
 │   ├── globals.css           # Global styles
@@ -232,6 +280,7 @@ src/
 │   └── page.tsx              # Main page
 ├── components/
 │   ├── ImageUploader.tsx     # Drag-drop upload
+│   ├── TweetImageInput.tsx   # Tweet/image URL input
 │   ├── SettingsPanel.tsx     # Archetype & settings
 │   ├── ResultViewer.tsx      # Before/after view
 │   └── LoadingState.tsx      # Loading animation

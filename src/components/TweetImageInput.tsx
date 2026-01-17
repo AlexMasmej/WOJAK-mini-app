@@ -2,8 +2,6 @@
 
 import { useState, useCallback, useRef } from 'react';
 
-type InputMode = 'tweet' | 'image';
-
 interface TweetImageInputProps {
   onImageReady: (file: File, preview: string) => void;
   disabled?: boolean;
@@ -13,11 +11,9 @@ export default function TweetImageInput({
   onImageReady,
   disabled = false,
 }: TweetImageInputProps) {
-  const [mode, setMode] = useState<InputMode>('tweet');
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showFallbackHint, setShowFallbackHint] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handlePaste = useCallback(async () => {
@@ -25,17 +21,10 @@ export default function TweetImageInput({
       const text = await navigator.clipboard.readText();
       setUrl(text.trim());
       setError(null);
-      setShowFallbackHint(false);
     } catch {
       // Clipboard API might not be available or permission denied
       inputRef.current?.focus();
     }
-  }, []);
-
-  const handleModeChange = useCallback((newMode: InputMode) => {
-    setMode(newMode);
-    setError(null);
-    setShowFallbackHint(false);
   }, []);
 
   const fetchImageAsFile = useCallback(
@@ -70,24 +59,19 @@ export default function TweetImageInput({
 
     setIsLoading(true);
     setError(null);
-    setShowFallbackHint(false);
 
     try {
-      // Step 1: Extract/validate image URL
+      // Step 1: Extract image URL from tweet
       const extractResponse = await fetch('/api/extract-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: url.trim(), mode }),
+        body: JSON.stringify({ url: url.trim(), mode: 'tweet' }),
       });
 
       const extractData = await extractResponse.json();
 
       if (!extractResponse.ok || !extractData.success) {
-        // Show fallback hint for tweet extraction failures
-        if (mode === 'tweet') {
-          setShowFallbackHint(true);
-        }
-        throw new Error(extractData.error || 'Failed to extract image');
+        throw new Error(extractData.error || 'Failed to extract image from tweet');
       }
 
       const imageUrl = extractData.imageUrl;
@@ -103,7 +87,7 @@ export default function TweetImageInput({
     } finally {
       setIsLoading(false);
     }
-  }, [url, mode, isLoading, disabled, fetchImageAsFile, onImageReady]);
+  }, [url, isLoading, disabled, fetchImageAsFile, onImageReady]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -115,51 +99,12 @@ export default function TweetImageInput({
     [handleSubmit]
   );
 
-  const handleSwitchToImageMode = useCallback(() => {
-    setMode('image');
-    setUrl('');
-    setError(null);
-    setShowFallbackHint(false);
-    inputRef.current?.focus();
-  }, []);
-
   return (
     <div className="w-full space-y-3">
-      {/* Segmented Toggle */}
-      <div className="flex rounded-lg bg-gray-100 p-1">
-        <button
-          type="button"
-          onClick={() => handleModeChange('tweet')}
-          disabled={disabled || isLoading}
-          className={`
-            flex-1 py-2 px-3 text-sm font-medium rounded-md transition-all
-            ${
-              mode === 'tweet'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }
-            ${disabled || isLoading ? 'opacity-50 cursor-not-allowed' : ''}
-          `}
-        >
-          Tweet URL <span className="text-xs text-gray-400">(beta)</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => handleModeChange('image')}
-          disabled={disabled || isLoading}
-          className={`
-            flex-1 py-2 px-3 text-sm font-medium rounded-md transition-all
-            ${
-              mode === 'image'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }
-            ${disabled || isLoading ? 'opacity-50 cursor-not-allowed' : ''}
-          `}
-        >
-          Image URL
-        </button>
-      </div>
+      {/* Tweet URL label */}
+      <label className="block text-sm font-medium text-gray-700">
+        Tweet URL
+      </label>
 
       {/* URL Input with Paste button */}
       <div className="flex gap-2">
@@ -171,14 +116,9 @@ export default function TweetImageInput({
             onChange={(e) => {
               setUrl(e.target.value);
               setError(null);
-              setShowFallbackHint(false);
             }}
             onKeyDown={handleKeyDown}
-            placeholder={
-              mode === 'tweet'
-                ? 'https://x.com/user/status/123...'
-                : 'https://pbs.twimg.com/media/...'
-            }
+            placeholder="https://x.com/user/status/123..."
             disabled={disabled || isLoading}
             className={`
               w-full px-4 py-3 pr-16 rounded-xl border bg-white text-sm
@@ -204,7 +144,7 @@ export default function TweetImageInput({
           </button>
         </div>
 
-        {/* Fetch/Use Button */}
+        {/* Wojakify Button */}
         <button
           type="button"
           onClick={handleSubmit}
@@ -242,42 +182,20 @@ export default function TweetImageInput({
                 />
               </svg>
             </span>
-          ) : mode === 'tweet' ? (
-            'Fetch'
           ) : (
-            'Use'
+            'Wojakify'
           )}
         </button>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="text-sm animate-fade-in">
-          <p className="text-red-500">{error}</p>
-          {showFallbackHint && (
-            <button
-              type="button"
-              onClick={handleSwitchToImageMode}
-              className="mt-2 text-blue-500 hover:text-blue-600 underline underline-offset-2"
-            >
-              Paste the image link instead (pbs.twimg.com/...) or upload below
-            </button>
-          )}
-        </div>
+        <p className="text-sm text-red-500 animate-fade-in">{error}</p>
       )}
 
-      {/* Mode-specific hints */}
+      {/* Hint */}
       <p className="text-xs text-gray-400 text-center">
-        {mode === 'tweet' ? (
-          <>
-            Extracts the first image from a tweet.{' '}
-            <span className="text-gray-300">Works best with public tweets.</span>
-          </>
-        ) : (
-          <>
-            Right-click a tweet image, copy image address, and paste above.
-          </>
-        )}
+        Extracts the first image from a tweet. Works best with public tweets.
       </p>
     </div>
   );

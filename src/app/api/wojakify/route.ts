@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { WojakifySettings, WojakArchetype } from '@/types';
 import { createStylizer } from '@/lib/stylizers';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { checkDailyLimit, incrementDailyUsage } from '@/lib/daily-limit';
 import { getImageCache } from '@/lib/cache';
 
 // Config for the route
@@ -59,6 +60,27 @@ export async function POST(request: NextRequest) {
             'X-RateLimit-Remaining': '0',
             'X-RateLimit-Reset': String(Math.ceil(rateLimit.resetIn / 1000)),
             'Retry-After': String(Math.ceil(rateLimit.resetIn / 1000)),
+          },
+        }
+      );
+    }
+
+    // Check daily generation limit
+    const dailyLimit = checkDailyLimit(clientIP);
+
+    if (!dailyLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Daily limit reached (${dailyLimit.limit} generations per day). Resets at midnight UTC.`,
+        },
+        {
+          status: 429,
+          headers: {
+            'X-DailyLimit-Used': String(dailyLimit.used),
+            'X-DailyLimit-Limit': String(dailyLimit.limit),
+            'X-DailyLimit-Remaining': '0',
+            'X-DailyLimit-Reset': dailyLimit.resetsAt,
           },
         }
       );
@@ -130,6 +152,9 @@ export async function POST(request: NextRequest) {
           headers: {
             'X-RateLimit-Remaining': String(rateLimit.remaining),
             'X-Cache': 'HIT',
+            'X-DailyLimit-Used': String(dailyLimit.used),
+            'X-DailyLimit-Limit': String(dailyLimit.limit),
+            'X-DailyLimit-Remaining': String(dailyLimit.remaining),
           },
         }
       );
@@ -143,11 +168,17 @@ export async function POST(request: NextRequest) {
       settings,
     });
 
+    // Increment daily usage only after successful generation (not cache hits)
+    incrementDailyUsage(clientIP);
+
     // Convert result to base64
     const resultBase64 = result.imageBuffer.toString('base64');
 
     // Cache the result
     cache.set(imageBuffer, settings, resultBase64);
+
+    // Get updated daily limit info after increment
+    const updatedDailyLimit = checkDailyLimit(clientIP);
 
     return NextResponse.json(
       {
@@ -159,6 +190,9 @@ export async function POST(request: NextRequest) {
         headers: {
           'X-RateLimit-Remaining': String(rateLimit.remaining),
           'X-Cache': 'MISS',
+          'X-DailyLimit-Used': String(updatedDailyLimit.used),
+          'X-DailyLimit-Limit': String(updatedDailyLimit.limit),
+          'X-DailyLimit-Remaining': String(updatedDailyLimit.remaining),
         },
       }
     );

@@ -58,7 +58,8 @@ export class GeminiImagenStylizer extends BaseImageStylizer {
 
   private async callGeminiAPI(imageBase64: string, prompt: string): Promise<Buffer> {
     // Use Nano Banana Pro (Gemini 3 Pro Image) for superior image generation
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=${this.config.apiKey}`;
+    // API key is passed via x-goog-api-key header for security (not in URL)
+    const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent';
 
     const requestBody = {
       contents: [
@@ -111,6 +112,7 @@ Generate the Wojak-style image now.`,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-goog-api-key': this.config.apiKey,
       },
       body: JSON.stringify(requestBody),
     });

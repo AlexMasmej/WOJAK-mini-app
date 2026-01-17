@@ -57,8 +57,8 @@ export class GeminiImagenStylizer extends BaseImageStylizer {
   }
 
   private async callGeminiAPI(imageBase64: string, prompt: string): Promise<Buffer> {
-    // Use Gemini 2.0 Flash with image generation capability (Google AI Studio API)
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${this.config.apiKey}`;
+    // Use Gemini 2.0 Flash Experimental with image generation (Google AI Studio API)
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.config.apiKey}`;
 
     const requestBody = {
       contents: [
@@ -75,15 +75,18 @@ export class GeminiImagenStylizer extends BaseImageStylizer {
 
 ${prompt}
 
-IMPORTANT: Generate an image that is a Wojak-style artistic transformation of the input photo. Output ONLY the transformed image.`,
+Generate a new image that transforms the input photo into Wojak meme art style.`,
             },
           ],
         },
       ],
       generationConfig: {
-        responseModalities: ['TEXT', 'IMAGE'],
+        responseModalities: ['IMAGE', 'TEXT'],
+        temperature: 1,
       },
     };
+
+    console.log('Calling Gemini API...');
 
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -93,25 +96,42 @@ IMPORTANT: Generate an image that is a Wojak-style artistic transformation of th
       body: JSON.stringify(requestBody),
     });
 
+    const responseText = await response.text();
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Gemini API error:', errorText);
-      throw new Error(`Gemini API error: ${response.status}`);
+      console.error('Gemini API error response:', responseText);
+      throw new Error(`Gemini API error: ${response.status} - ${responseText.substring(0, 200)}`);
     }
 
-    const data = await response.json();
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      console.error('Failed to parse response:', responseText.substring(0, 500));
+      throw new Error('Invalid response from Gemini API');
+    }
+
+    console.log('Gemini response structure:', JSON.stringify(Object.keys(data)));
 
     // Extract image from response
     const candidates = data.candidates;
     if (candidates && candidates[0]?.content?.parts) {
       for (const part of candidates[0].content.parts) {
         if (part.inlineData?.data) {
+          console.log('Found image in response');
           return Buffer.from(part.inlineData.data, 'base64');
         }
       }
+      // Log what parts we got
+      console.log('Parts received:', candidates[0].content.parts.map((p: Record<string, unknown>) => Object.keys(p)));
     }
 
-    throw new Error('No image generated from Gemini API');
+    // Check for blocked content or other issues
+    if (data.promptFeedback?.blockReason) {
+      throw new Error(`Content blocked: ${data.promptFeedback.blockReason}`);
+    }
+
+    throw new Error('No image generated from Gemini API - model may not support image output');
   }
 
   private async processOutput(

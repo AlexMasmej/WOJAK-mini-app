@@ -25,7 +25,7 @@ export interface ImageStylizerInput {
 
 export interface ImageStylizerOutput {
   imageBuffer: Buffer;
-  mimeType: 'image/webp';
+  mimeType: 'image/png' | 'image/webp';
 }
 
 export interface ImageStylizer {

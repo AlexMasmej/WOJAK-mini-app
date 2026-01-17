@@ -18,8 +18,8 @@ export default function ResultViewer({
   const handleDownload = useCallback(() => {
     // Create download link
     const link = document.createElement('a');
-    link.href = `data:image/webp;base64,${resultImage}`;
-    link.download = `wojakified-${Date.now()}.webp`;
+    link.href = `data:image/png;base64,${resultImage}`;
+    link.download = `wojakified-${Date.now()}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -27,26 +27,42 @@ export default function ResultViewer({
 
   const handleShareOnX = useCallback(async () => {
     try {
-      // Convert base64 to blob and copy to clipboard
-      const response = await fetch(`data:image/webp;base64,${resultImage}`);
+      // Convert base64 to blob
+      const response = await fetch(`data:image/png;base64,${resultImage}`);
       const blob = await response.blob();
+      const file = new File([blob], 'wojakified.png', { type: 'image/png' });
 
-      // Try to copy image to clipboard
+      // Try Web Share API first (supports images on mobile and some desktop browsers)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            text: 'I just wojakified this picture @wojakonX',
+            files: [file],
+          });
+          return; // Success, exit early
+        } catch (shareError) {
+          // User cancelled or share failed, fall through to clipboard method
+          if ((shareError as Error).name === 'AbortError') {
+            return; // User cancelled, don't open X
+          }
+        }
+      }
+
+      // Fallback: Copy image to clipboard and open X
       if (navigator.clipboard && 'write' in navigator.clipboard) {
         try {
           await navigator.clipboard.write([
             new ClipboardItem({
-              [blob.type]: blob,
+              'image/png': blob,
             }),
           ]);
         } catch {
-          // Clipboard write failed, continue anyway
           console.log('Could not copy image to clipboard');
         }
       }
 
-      // Open X with pre-filled text
-      const tweetText = encodeURIComponent('I just wojakified this picture @wojakonX');
+      // Open X with pre-filled text (user can paste the image)
+      const tweetText = encodeURIComponent('I just wojakified this picture @wojakonX\n\n(Image copied to clipboard - paste it!)');
       window.open(`https://x.com/intent/tweet?text=${tweetText}`, '_blank');
     } catch (error) {
       console.log('Share on X failed:', error);
@@ -61,7 +77,7 @@ export default function ResultViewer({
       {/* Image display */}
       <div className="relative aspect-square sm:aspect-[4/3] w-full rounded-2xl overflow-hidden bg-white border border-gray-200">
         <img
-          src={showOriginal ? originalImage : `data:image/webp;base64,${resultImage}`}
+          src={showOriginal ? originalImage : `data:image/png;base64,${resultImage}`}
           alt={showOriginal ? 'Original photo' : 'Wojakified result'}
           className="w-full h-full object-contain"
         />

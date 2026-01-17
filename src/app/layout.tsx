@@ -1,11 +1,18 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
+const WOJAK_IMAGE_URL = 'https://upload.wikimedia.org/wikipedia/en/c/cc/Wojak_cropped.jpg';
+
 export const metadata: Metadata = {
   title: 'Wojakify - Transform Photos into Wojak Art',
   description: 'Turn any photo into a Wojak-style meme illustration. Fast, private, and fun.',
   keywords: ['wojak', 'meme', 'image filter', 'art style', 'photo transformation'],
   authors: [{ name: 'Wojakify' }],
+  icons: {
+    icon: WOJAK_IMAGE_URL,
+    shortcut: WOJAK_IMAGE_URL,
+    apple: WOJAK_IMAGE_URL,
+  },
   openGraph: {
     title: 'Wojakify - Transform Photos into Wojak Art',
     description: 'Turn any photo into a Wojak-style meme illustration',

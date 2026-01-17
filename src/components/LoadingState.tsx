@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
+const WOJAK_IMAGE_URL = 'https://upload.wikimedia.org/wikipedia/en/c/cc/Wojak_cropped.jpg';
+
 const LOADING_MESSAGES = [
   'Analyzing your photo...',
   'Drawing the outlines...',
@@ -24,20 +26,13 @@ export default function LoadingState() {
 
   return (
     <div className="flex flex-col items-center justify-center py-12 animate-fade-in">
-      {/* Animated Wojak-style face */}
-      <div className="relative w-24 h-24 mb-6">
-        <div className="absolute inset-0 rounded-full bg-wojak-skin border-2 border-wojak-outline loading-pulse" />
-        {/* Eyes */}
-        <div className="absolute top-8 left-5 w-3 h-4 bg-wojak-outline rounded-full" />
-        <div className="absolute top-8 right-5 w-3 h-4 bg-wojak-outline rounded-full" />
-        {/* Mouth */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-8 h-1 bg-wojak-outline rounded-full" />
-      </div>
-
-      {/* Loading spinner */}
-      <div className="relative w-12 h-12 mb-4">
-        <div className="absolute inset-0 border-3 border-gray-200 rounded-full" />
-        <div className="absolute inset-0 border-3 border-gray-900 rounded-full border-t-transparent animate-spin" />
+      {/* Animated Wojak image with zoom effect */}
+      <div className="relative w-32 h-32 mb-6">
+        <img
+          src={WOJAK_IMAGE_URL}
+          alt="Wojak loading"
+          className="w-full h-full object-contain wojak-zoom"
+        />
       </div>
 
       {/* Progress text */}

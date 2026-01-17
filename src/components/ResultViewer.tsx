@@ -32,8 +32,11 @@ export default function ResultViewer({
       const blob = await response.blob();
       const file = new File([blob], 'wojakified.png', { type: 'image/png' });
 
-      // Try Web Share API first (supports images on mobile and some desktop browsers)
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      // Only use Web Share API on mobile devices
+      // On desktop (macOS, Windows, Linux), it shows native share sheet instead of sharing to X
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({
             text: 'I just wojakified this picture @wojakonX',

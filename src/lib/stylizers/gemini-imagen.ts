@@ -195,7 +195,7 @@ Generate the Wojak-style image now.`,
       const insetY = Math.round(height * 0.035);
 
       // Load the watermark image from public folder
-      const watermarkPath = path.join(process.cwd(), 'public', 'watermark.png');
+      const watermarkPath = path.join(process.cwd(), 'public', 'watermark.jpg');
 
       // Scale watermark to ~15% of image width
       const targetWidth = Math.round(width * 0.15);

@@ -6,6 +6,10 @@ interface GeminiConfig {
   apiKey: string;
 }
 
+// Primary model (best quality) and fallback (when rate limited)
+const PRIMARY_MODEL = 'gemini-3-pro-image-preview';
+const FALLBACK_MODEL = 'gemini-2.0-flash-exp';
+
 export class GeminiImagenStylizer extends BaseImageStylizer {
   private config: GeminiConfig;
 
@@ -44,8 +48,8 @@ export class GeminiImagenStylizer extends BaseImageStylizer {
     const jpegBuffer = await processedImage.jpeg({ quality: 85 }).toBuffer();
     const imageBase64 = jpegBuffer.toString('base64');
 
-    // Call Gemini API (Google AI Studio)
-    const result = await this.callGeminiAPI(imageBase64, prompt);
+    // Call Gemini API (Google AI Studio) with fallback
+    const result = await this.callGeminiAPIWithFallback(imageBase64, prompt);
 
     // Convert result to WebP at 1024px
     const outputBuffer = await this.processOutput(result, metadata.width, metadata.height);
@@ -56,11 +60,33 @@ export class GeminiImagenStylizer extends BaseImageStylizer {
     };
   }
 
-  private async callGeminiAPI(imageBase64: string, prompt: string): Promise<Buffer> {
-    // Use Gemini 2.0 Flash Exp for image generation
-    // Supports native image output with generateContent API
-    // API key is passed via x-goog-api-key header for security (not in URL)
-    const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+  private async callGeminiAPIWithFallback(imageBase64: string, prompt: string): Promise<Buffer> {
+    // Try primary model first (best quality)
+    try {
+      console.log(`Trying primary model: ${PRIMARY_MODEL}`);
+      return await this.callGeminiModel(PRIMARY_MODEL, imageBase64, prompt);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      // Check if it's a rate limit or quota error
+      const isRateLimited =
+        errorMessage.includes('429') ||
+        errorMessage.includes('quota') ||
+        errorMessage.includes('RESOURCE_EXHAUSTED') ||
+        errorMessage.includes('rate limit');
+
+      if (isRateLimited) {
+        console.log(`Primary model rate limited, falling back to ${FALLBACK_MODEL}`);
+        return await this.callGeminiModel(FALLBACK_MODEL, imageBase64, prompt);
+      }
+
+      // For other errors, rethrow
+      throw error;
+    }
+  }
+
+  private async callGeminiModel(modelName: string, imageBase64: string, prompt: string): Promise<Buffer> {
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
 
     const requestBody = {
       contents: [
@@ -107,7 +133,7 @@ Generate the Wojak-style image now.`,
       },
     };
 
-    console.log('Calling Gemini 2.0 Flash Exp API...');
+    console.log(`Calling Gemini API with model: ${modelName}...`);
 
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -121,7 +147,7 @@ Generate the Wojak-style image now.`,
     const responseText = await response.text();
 
     if (!response.ok) {
-      console.error('Gemini API error response:', responseText);
+      console.error(`Gemini API error response (${modelName}):`, responseText);
       throw new Error(`Gemini API error: ${response.status} - ${responseText.substring(0, 200)}`);
     }
 
@@ -140,7 +166,7 @@ Generate the Wojak-style image now.`,
     if (candidates && candidates[0]?.content?.parts) {
       for (const part of candidates[0].content.parts) {
         if (part.inlineData?.data) {
-          console.log('Found image in response');
+          console.log(`Found image in response from ${modelName}`);
           return Buffer.from(part.inlineData.data, 'base64');
         }
       }

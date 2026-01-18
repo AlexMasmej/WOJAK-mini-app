@@ -57,9 +57,10 @@ export class GeminiImagenStylizer extends BaseImageStylizer {
   }
 
   private async callGeminiAPI(imageBase64: string, prompt: string): Promise<Buffer> {
-    // Use Nano Banana Pro (Gemini 3 Pro Image) for superior image generation
+    // Use Gemini 2.5 Flash Preview Image for image generation
+    // Higher rate limits (2K RPD vs 250 RPD) and good quality output
     // API key is passed via x-goog-api-key header for security (not in URL)
-    const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent';
+    const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-image:generateContent';
 
     const requestBody = {
       contents: [
@@ -106,7 +107,7 @@ Generate the Wojak-style image now.`,
       },
     };
 
-    console.log('Calling Nano Banana Pro (Gemini 3 Pro Image) API...');
+    console.log('Calling Gemini 2.5 Flash Preview Image API...');
 
     const response = await fetch(endpoint, {
       method: 'POST',

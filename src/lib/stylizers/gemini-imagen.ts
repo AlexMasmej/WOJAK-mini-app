@@ -189,37 +189,43 @@ Generate the Wojak-style image now.`,
     width: number,
     height: number
   ): Promise<Buffer> {
-    // Calculate inset (3-4% from edges)
-    const insetX = Math.round(width * 0.035);
-    const insetY = Math.round(height * 0.035);
+    try {
+      // Calculate inset (3-4% from edges)
+      const insetX = Math.round(width * 0.035);
+      const insetY = Math.round(height * 0.035);
 
-    // Load the watermark image from public folder
-    const watermarkPath = path.join(process.cwd(), 'public', 'watermark.png');
+      // Load the watermark image from public folder
+      const watermarkPath = path.join(process.cwd(), 'public', 'watermark.png');
 
-    // Scale watermark to ~15% of image width
-    const targetWidth = Math.round(width * 0.15);
+      // Scale watermark to ~15% of image width
+      const targetWidth = Math.round(width * 0.15);
 
-    const watermarkImage = await sharp(watermarkPath)
-      .resize(targetWidth, null, { fit: 'inside' })
-      .toBuffer();
+      const watermarkImage = await sharp(watermarkPath)
+        .resize(targetWidth, null, { fit: 'inside' })
+        .toBuffer();
 
-    const watermarkMeta = await sharp(watermarkImage).metadata();
-    const watermarkWidth = watermarkMeta.width || targetWidth;
-    const watermarkHeight = watermarkMeta.height || targetWidth;
+      const watermarkMeta = await sharp(watermarkImage).metadata();
+      const watermarkWidth = watermarkMeta.width || targetWidth;
+      const watermarkHeight = watermarkMeta.height || targetWidth;
 
-    // Position watermark at bottom-right with inset
-    const left = width - watermarkWidth - insetX;
-    const top = height - watermarkHeight - insetY;
+      // Position watermark at bottom-right with inset
+      const left = width - watermarkWidth - insetX;
+      const top = height - watermarkHeight - insetY;
 
-    return sharp(imageBuffer)
-      .composite([
-        {
-          input: watermarkImage,
-          left: Math.max(0, left),
-          top: Math.max(0, top),
-        },
-      ])
-      .png()
-      .toBuffer();
+      return sharp(imageBuffer)
+        .composite([
+          {
+            input: watermarkImage,
+            left: Math.max(0, left),
+            top: Math.max(0, top),
+          },
+        ])
+        .png()
+        .toBuffer();
+    } catch (error) {
+      // If watermark file not found, return image without watermark
+      console.warn('Watermark not applied:', error);
+      return sharp(imageBuffer).png().toBuffer();
+    }
   }
 }

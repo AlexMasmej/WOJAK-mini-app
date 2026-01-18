@@ -4,13 +4,10 @@ import sharp from 'sharp';
 
 interface GeminiConfig {
   apiKey: string;
-  projectId?: string;
-  location?: string;
-  useVertexAI?: boolean;
 }
 
 // Primary model (best quality) and fallback (when rate limited)
-const PRIMARY_MODEL = 'gemini-2.0-flash-exp';
+const PRIMARY_MODEL = 'gemini-3-pro-image-preview';
 const FALLBACK_MODEL = 'gemini-2.0-flash-exp';
 
 export class GeminiImagenStylizer extends BaseImageStylizer {
@@ -18,32 +15,12 @@ export class GeminiImagenStylizer extends BaseImageStylizer {
 
   constructor(config?: Partial<GeminiConfig>) {
     super();
+    this.config = {
+      apiKey: config?.apiKey || process.env.GOOGLE_API_KEY || '',
+    };
 
-    // Check for Vertex AI config first (higher rate limits)
-    const vertexApiKey = config?.apiKey || process.env.VERTEX_API_KEY;
-    const projectId = config?.projectId || process.env.GOOGLE_CLOUD_PROJECT;
-    const location = config?.location || process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
-
-    if (vertexApiKey && projectId) {
-      // Use Vertex AI
-      this.config = {
-        apiKey: vertexApiKey,
-        projectId,
-        location,
-        useVertexAI: true,
-      };
-      console.log('Using Vertex AI for image generation');
-    } else {
-      // Fall back to Google AI Studio
-      const aiStudioKey = process.env.GOOGLE_API_KEY || '';
-      if (!aiStudioKey) {
-        throw new Error('Either VERTEX_API_KEY + GOOGLE_CLOUD_PROJECT or GOOGLE_API_KEY must be set');
-      }
-      this.config = {
-        apiKey: aiStudioKey,
-        useVertexAI: false,
-      };
-      console.log('Using Google AI Studio for image generation');
+    if (!this.config.apiKey) {
+      throw new Error('GOOGLE_API_KEY must be set');
     }
   }
 
@@ -71,10 +48,10 @@ export class GeminiImagenStylizer extends BaseImageStylizer {
     const jpegBuffer = await processedImage.jpeg({ quality: 85 }).toBuffer();
     const imageBase64 = jpegBuffer.toString('base64');
 
-    // Call Gemini API with fallback
+    // Call Gemini API (Google AI Studio) with fallback
     const result = await this.callGeminiAPIWithFallback(imageBase64, prompt);
 
-    // Convert result to PNG at 1024px
+    // Convert result to WebP at 1024px
     const outputBuffer = await this.processOutput(result, metadata.width, metadata.height);
 
     return {
@@ -108,19 +85,8 @@ export class GeminiImagenStylizer extends BaseImageStylizer {
     }
   }
 
-  private getEndpoint(modelName: string): string {
-    if (this.config.useVertexAI) {
-      // Vertex AI endpoint format
-      const { projectId, location } = this.config;
-      return `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelName}:generateContent`;
-    } else {
-      // Google AI Studio endpoint
-      return `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
-    }
-  }
-
   private async callGeminiModel(modelName: string, imageBase64: string, prompt: string): Promise<Buffer> {
-    const endpoint = this.getEndpoint(modelName);
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
 
     const requestBody = {
       contents: [
@@ -167,26 +133,14 @@ Generate the Wojak-style image now.`,
       },
     };
 
-    const apiType = this.config.useVertexAI ? 'Vertex AI' : 'AI Studio';
-    console.log(`Calling ${apiType} with model: ${modelName}...`);
+    console.log(`Calling Gemini API with model: ${modelName}...`);
 
-    // Different auth methods for Vertex AI vs AI Studio
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    let url = endpoint;
-    if (this.config.useVertexAI) {
-      // Vertex AI uses API key as query parameter
-      url = `${endpoint}?key=${this.config.apiKey}`;
-    } else {
-      // AI Studio uses header
-      headers['x-goog-api-key'] = this.config.apiKey;
-    }
-
-    const response = await fetch(url, {
+    const response = await fetch(endpoint, {
       method: 'POST',
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': this.config.apiKey,
+      },
       body: JSON.stringify(requestBody),
     });
 

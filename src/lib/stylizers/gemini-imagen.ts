@@ -173,8 +173,59 @@ Generate the Wojak-style image now.`,
     const newWidth = Math.round(currentWidth * scale);
     const newHeight = Math.round(currentHeight * scale);
 
-    return output
-      .resize(newWidth, newHeight, { fit: 'inside' })
+    // Resize first
+    output = output.resize(newWidth, newHeight, { fit: 'inside' });
+    const resizedBuffer = await output.toBuffer();
+
+    // Add watermark
+    const watermarkedBuffer = await this.addWatermark(resizedBuffer, newWidth, newHeight);
+
+    return watermarkedBuffer;
+  }
+
+  private async addWatermark(
+    imageBuffer: Buffer,
+    width: number,
+    height: number
+  ): Promise<Buffer> {
+    const watermarkText = '$WOJAK @WojakOnX';
+
+    // Calculate inset (4% from edges)
+    const insetX = Math.round(width * 0.04);
+    const insetY = Math.round(height * 0.04);
+
+    // Calculate font size based on image dimensions (roughly 2.5% of width)
+    const fontSize = Math.max(12, Math.round(width * 0.025));
+
+    // Estimate text width for positioning (approximate character width)
+    const estimatedTextWidth = watermarkText.length * fontSize * 0.55;
+    const textHeight = fontSize * 1.2;
+
+    // Create SVG watermark with semi-transparent background for better visibility
+    const svgWidth = Math.round(estimatedTextWidth + 16);
+    const svgHeight = Math.round(textHeight + 8);
+
+    const svgWatermark = Buffer.from(`
+      <svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="${svgWidth}" height="${svgHeight}" rx="4" ry="4" fill="rgba(0,0,0,0.5)"/>
+        <text x="8" y="${fontSize + 2}" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="bold" fill="white">
+          ${watermarkText}
+        </text>
+      </svg>
+    `);
+
+    // Position watermark at bottom-right with inset
+    const left = width - svgWidth - insetX;
+    const top = height - svgHeight - insetY;
+
+    return sharp(imageBuffer)
+      .composite([
+        {
+          input: svgWatermark,
+          left: Math.max(0, left),
+          top: Math.max(0, top),
+        },
+      ])
       .png()
       .toBuffer();
   }

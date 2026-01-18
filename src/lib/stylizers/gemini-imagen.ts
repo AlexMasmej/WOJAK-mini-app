@@ -1,7 +1,6 @@
 import { ImageStylizerInput, ImageStylizerOutput } from '@/types';
 import { BaseImageStylizer } from './base';
 import sharp from 'sharp';
-import path from 'path';
 
 interface GeminiConfig {
   apiKey: string;
@@ -174,58 +173,9 @@ Generate the Wojak-style image now.`,
     const newWidth = Math.round(currentWidth * scale);
     const newHeight = Math.round(currentHeight * scale);
 
-    // Resize first
-    output = output.resize(newWidth, newHeight, { fit: 'inside' });
-    const resizedBuffer = await output.toBuffer();
-
-    // Add watermark
-    const watermarkedBuffer = await this.addWatermark(resizedBuffer, newWidth, newHeight);
-
-    return watermarkedBuffer;
-  }
-
-  private async addWatermark(
-    imageBuffer: Buffer,
-    width: number,
-    height: number
-  ): Promise<Buffer> {
-    try {
-      // Calculate inset (3-4% from edges)
-      const insetX = Math.round(width * 0.035);
-      const insetY = Math.round(height * 0.035);
-
-      // Load the watermark image from public folder
-      const watermarkPath = path.join(process.cwd(), 'public', 'watermark.jpg');
-
-      // Scale watermark to ~15% of image width
-      const targetWidth = Math.round(width * 0.15);
-
-      const watermarkImage = await sharp(watermarkPath)
-        .resize(targetWidth, null, { fit: 'inside' })
-        .toBuffer();
-
-      const watermarkMeta = await sharp(watermarkImage).metadata();
-      const watermarkWidth = watermarkMeta.width || targetWidth;
-      const watermarkHeight = watermarkMeta.height || targetWidth;
-
-      // Position watermark at bottom-right with inset
-      const left = width - watermarkWidth - insetX;
-      const top = height - watermarkHeight - insetY;
-
-      return sharp(imageBuffer)
-        .composite([
-          {
-            input: watermarkImage,
-            left: Math.max(0, left),
-            top: Math.max(0, top),
-          },
-        ])
-        .png()
-        .toBuffer();
-    } catch (error) {
-      // If watermark file not found, return image without watermark
-      console.warn('Watermark not applied:', error);
-      return sharp(imageBuffer).png().toBuffer();
-    }
+    return output
+      .resize(newWidth, newHeight, { fit: 'inside' })
+      .png()
+      .toBuffer();
   }
 }

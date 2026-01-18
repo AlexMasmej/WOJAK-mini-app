@@ -1,6 +1,7 @@
 import { ImageStylizerInput, ImageStylizerOutput } from '@/types';
 import { BaseImageStylizer } from './base';
 import sharp from 'sharp';
+import path from 'path';
 
 interface GeminiConfig {
   apiKey: string;
@@ -188,36 +189,23 @@ Generate the Wojak-style image now.`,
     width: number,
     height: number
   ): Promise<Buffer> {
-    // Calculate inset (4% from edges)
-    const insetX = Math.round(width * 0.04);
-    const insetY = Math.round(height * 0.04);
+    // Calculate inset (3-4% from edges)
+    const insetX = Math.round(width * 0.035);
+    const insetY = Math.round(height * 0.035);
 
-    // Scale watermark based on image width (base size designed for 1024px width)
-    const scaleFactor = width / 1024;
-    const watermarkWidth = Math.round(140 * scaleFactor);
-    const watermarkHeight = Math.round(45 * scaleFactor);
+    // Load the watermark image from public folder
+    const watermarkPath = path.join(process.cwd(), 'public', 'watermark.png');
 
-    // SVG watermark: "$WOJAK" bubble letter logo with shadow, transparent background
-    const svgWatermark = Buffer.from(`<svg width="${watermarkWidth}" height="${watermarkHeight}" viewBox="0 0 140 45" xmlns="http://www.w3.org/2000/svg">
-  <!-- Shadow layer (offset down-right) -->
-  <g transform="translate(3, 3)" fill="#1a1a1a">
-    <path d="M6 5C6 3 8 1 11 1L11 0L13 0L13 1C16 1.5 18 3 19 5L17 7C16 5 15 4 13 4L13 12C17 13 19 15 19 19C19 23 16 25 13 25.5L13 28L11 28L11 25.5C8 25 5 23 4 19L7 17C8 20 9 21 11 22L11 14C7 13 5 11 5 7C5 6 5.5 5.5 6 5ZM11 11L11 4C9 4.5 8 6 8 7.5C8 9 9 10 11 11ZM13 16L13 22C15 21.5 16 20 16 18C16 16.5 15 15.5 13 16Z"/>
-    <path d="M22 5L26 5L30 18L34 5L38 5L42 18L46 5L50 5L44 28L40 28L36 15L32 28L28 28Z"/>
-    <path d="M52 16.5C52 9 57 4 63 4C69 4 74 9 74 16.5C74 24 69 29 63 29C57 29 52 24 52 16.5ZM56 16.5C56 22 59 26 63 26C67 26 70 22 70 16.5C70 11 67 7 63 7C59 7 56 11 56 16.5Z"/>
-    <path d="M78 5L88 5L88 8L82 8L82 18C82 22 80 25 76 25C74 25 72 24 71 23L73 20C74 21 75 21.5 76 21.5C78 21.5 78 20 78 18L78 5Z"/>
-    <path d="M106 28L102 28L100 22L92 22L90 28L86 28L94 5L98 5ZM96 8L93 18L99 18Z"/>
-    <path d="M108 5L112 5L112 14L120 5L126 5L117 15L127 28L121 28L114 19L112 21L112 28L108 28Z"/>
-  </g>
-  <!-- Main letters: white fill with dark outline -->
-  <g fill="white" stroke="#2d2d2d" stroke-width="2" stroke-linejoin="round">
-    <path d="M6 5C6 3 8 1 11 1L11 0L13 0L13 1C16 1.5 18 3 19 5L17 7C16 5 15 4 13 4L13 12C17 13 19 15 19 19C19 23 16 25 13 25.5L13 28L11 28L11 25.5C8 25 5 23 4 19L7 17C8 20 9 21 11 22L11 14C7 13 5 11 5 7C5 6 5.5 5.5 6 5ZM11 11L11 4C9 4.5 8 6 8 7.5C8 9 9 10 11 11ZM13 16L13 22C15 21.5 16 20 16 18C16 16.5 15 15.5 13 16Z"/>
-    <path d="M22 5L26 5L30 18L34 5L38 5L42 18L46 5L50 5L44 28L40 28L36 15L32 28L28 28Z"/>
-    <path d="M52 16.5C52 9 57 4 63 4C69 4 74 9 74 16.5C74 24 69 29 63 29C57 29 52 24 52 16.5ZM56 16.5C56 22 59 26 63 26C67 26 70 22 70 16.5C70 11 67 7 63 7C59 7 56 11 56 16.5Z"/>
-    <path d="M78 5L88 5L88 8L82 8L82 18C82 22 80 25 76 25C74 25 72 24 71 23L73 20C74 21 75 21.5 76 21.5C78 21.5 78 20 78 18L78 5Z"/>
-    <path d="M106 28L102 28L100 22L92 22L90 28L86 28L94 5L98 5ZM96 8L93 18L99 18Z"/>
-    <path d="M108 5L112 5L112 14L120 5L126 5L117 15L127 28L121 28L114 19L112 21L112 28L108 28Z"/>
-  </g>
-</svg>`);
+    // Scale watermark to ~15% of image width
+    const targetWidth = Math.round(width * 0.15);
+
+    const watermarkImage = await sharp(watermarkPath)
+      .resize(targetWidth, null, { fit: 'inside' })
+      .toBuffer();
+
+    const watermarkMeta = await sharp(watermarkImage).metadata();
+    const watermarkWidth = watermarkMeta.width || targetWidth;
+    const watermarkHeight = watermarkMeta.height || targetWidth;
 
     // Position watermark at bottom-right with inset
     const left = width - watermarkWidth - insetX;
@@ -226,7 +214,7 @@ Generate the Wojak-style image now.`,
     return sharp(imageBuffer)
       .composite([
         {
-          input: svgWatermark,
+          input: watermarkImage,
           left: Math.max(0, left),
           top: Math.max(0, top),
         },

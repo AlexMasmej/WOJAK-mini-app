@@ -22,6 +22,19 @@ export default function Home() {
   const [settings, setSettings] = useState<WojakifySettings>(DEFAULT_SETTINGS);
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showToast, setShowToast] = useState(false);
+
+  const SOLANA_ADDRESS = 'ehPUG6berDsb6zE968U7gSMFSR72cHZJhACwyHLsQPW';
+
+  const handleCopySolanaAddress = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(SOLANA_ADDRESS);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  }, []);
 
   const handleImageSelect = useCallback((file: File, preview: string) => {
     setSelectedFile(file);
@@ -179,17 +192,12 @@ export default function Home() {
                       Wojak on X
                     </a>
                     <span className="text-gray-300">•</span>
-                    <span className="text-gray-400">
-                      Made by{' '}
-                      <a
-                        href="https://x.com/alexmasmej"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-gray-500 hover:text-gray-700 transition-colors"
-                      >
-                        @alexmasmej
-                      </a>
-                    </span>
+                    <button
+                      onClick={handleCopySolanaAddress}
+                      className="text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                    >
+                      Donate on Solana
+                    </button>
                   </div>
                 </div>
               )}
@@ -259,6 +267,13 @@ export default function Home() {
           </a>
         </p>
       </footer>
+
+      {/* Toast notification */}
+      {showToast && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-4 py-2 rounded-lg shadow-lg text-sm animate-fade-in z-50">
+          Solana address copied to clipboard!
+        </div>
+      )}
     </main>
   );
 }

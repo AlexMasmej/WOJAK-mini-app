@@ -184,20 +184,19 @@ export default function Home() {
               )}
 
               {state === 'upload' && (
-                <div className="text-center space-y-3">
+                <div className="text-center space-y-4">
                   <p className="text-gray-400 text-sm">
                     Your photos are processed securely and never stored
                   </p>
+                  <a
+                    href="https://jup.ag/tokens/8J69rbLTzWWgUJziFY8jeu5tDwEPBwUz4pKBMr5rpump"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium rounded-xl text-center transition-all"
+                  >
+                    Buy $WOJAK
+                  </a>
                   <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
-                    <a
-                      href="https://jup.ag/tokens/8J69rbLTzWWgUJziFY8jeu5tDwEPBwUz4pKBMr5rpump"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-green-600 hover:text-green-700 font-medium transition-colors"
-                    >
-                      Buy $WOJAK
-                    </a>
-                    <span className="text-gray-300">•</span>
                     <a
                       href="https://x.com/wojakonx"
                       target="_blank"

@@ -29,13 +29,8 @@ export default function XProfileInput({
 
   const fetchImageAsFile = useCallback(
     async (imageUrl: string, handle: string): Promise<{ file: File; preview: string }> => {
-      // For unavatar.io URLs, fetch directly (they have CORS enabled)
-      // For Twitter URLs, use our proxy
-      let fetchUrl = imageUrl;
-
-      if (imageUrl.includes('pbs.twimg.com') || imageUrl.includes('abs.twimg.com')) {
-        fetchUrl = `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
-      }
+      // Always use our proxy to avoid CORS issues
+      const fetchUrl = `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
 
       const response = await fetch(fetchUrl);
 

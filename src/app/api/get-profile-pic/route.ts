@@ -56,54 +56,29 @@ function parseUsername(input: string): string | null {
 }
 
 /**
- * Fetch profile picture using unavatar.io service
+ * Fetch profile picture URL using unavatar.io service
  * This is a free service that aggregates social media avatars
  */
 async function fetchProfilePicUrl(username: string): Promise<string> {
   // Use unavatar.io which supports Twitter/X
-  const unavatarUrl = `https://unavatar.io/twitter/${username}?fallback=false`;
+  // Adding a cache buster and size parameter
+  const unavatarUrl = `https://unavatar.io/twitter/${username}`;
 
-  // Check if the image exists by making a HEAD request
+  // Verify the image exists by making a HEAD request
   const response = await fetch(unavatarUrl, {
     method: 'HEAD',
     headers: {
       'User-Agent': API_UA,
     },
+    redirect: 'follow',
   });
 
   if (!response.ok) {
-    throw new Error('Profile picture not found. The account may be private or doesn\'t exist.');
+    throw new Error('Profile not found. Check the username and try again.');
   }
 
-  // Return the unavatar URL which will redirect to the actual image
-  // We use the larger size version
-  return `https://unavatar.io/twitter/${username}?size=400`;
-}
-
-/**
- * Alternative: Try to get profile pic from vxTwitter by fetching user data
- */
-async function fetchProfilePicFromVxTwitter(username: string): Promise<string | null> {
-  try {
-    // vxTwitter has a user endpoint
-    const response = await fetch(`https://api.vxtwitter.com/${username}`, {
-      headers: {
-        'User-Agent': API_UA,
-        Accept: 'application/json',
-      },
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      if (data.user_profile_image_url) {
-        // Get original quality by replacing _normal with _400x400
-        return data.user_profile_image_url.replace('_normal', '_400x400');
-      }
-    }
-  } catch {
-    // Fallback failed
-  }
-  return null;
+  // Return the unavatar URL - our proxy will fetch and serve it
+  return `https://unavatar.io/twitter/${username}`;
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<GetProfilePicResponse>> {
@@ -143,17 +118,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<GetProfil
 
     // Try to get profile picture
     try {
-      // First try vxTwitter for direct Twitter image URL
-      const vxImageUrl = await fetchProfilePicFromVxTwitter(username);
-      if (vxImageUrl) {
-        return NextResponse.json({
-          success: true,
-          imageUrl: vxImageUrl,
-          username,
-        });
-      }
-
-      // Fallback to unavatar.io
       const imageUrl = await fetchProfilePicUrl(username);
 
       return NextResponse.json({

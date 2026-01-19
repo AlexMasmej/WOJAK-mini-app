@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 export const maxDuration = 30;
 
-// Only allow Twitter image CDN
-const ALLOWED_HOSTS = ['pbs.twimg.com'];
+// Only allow Twitter image CDN and avatar services
+const ALLOWED_HOSTS = ['pbs.twimg.com', 'unavatar.io'];
 
 // Maximum image size: 10MB
 const MAX_SIZE_BYTES = 10 * 1024 * 1024;

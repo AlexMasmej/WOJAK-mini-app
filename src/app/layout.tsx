@@ -18,11 +18,20 @@ export const metadata: Metadata = {
     title: 'Wojakify - Transform Photos into Wojak Art',
     description: 'Turn any photo into a Wojak-style meme illustration',
     type: 'website',
+    images: [
+      {
+        url: 'https://i.imgur.com/ChauUX2.png',
+        width: 1200,
+        height: 630,
+        alt: 'Wojakify - Transform any photo into Wojak art',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Wojakify',
     description: 'Turn any photo into a Wojak-style meme illustration',
+    images: ['https://i.imgur.com/ChauUX2.png'],
   },
 };
 

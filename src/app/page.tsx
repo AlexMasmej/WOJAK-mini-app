@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
-import { ImageUploader, SettingsPanel, ResultViewer, LoadingState, TweetImageInput } from '@/components';
+import { ImageUploader, SettingsPanel, ResultViewer, LoadingState, TweetImageInput, XProfileInput } from '@/components';
 import { WojakifySettings, WojakifyResponse } from '@/types';
 
 type AppState = 'upload' | 'ready' | 'processing' | 'result' | 'error';
@@ -129,6 +129,21 @@ export default function Home() {
                 <>
                   <div className="bg-white rounded-2xl p-4 border border-gray-200">
                     <TweetImageInput
+                      onImageReady={handleImageSelect}
+                      disabled={false}
+                    />
+                  </div>
+
+                  {/* Divider */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 h-px bg-gray-200" />
+                    <span className="text-sm text-gray-400">or use X profile</span>
+                    <div className="flex-1 h-px bg-gray-200" />
+                  </div>
+
+                  {/* X Profile Input */}
+                  <div className="bg-white rounded-2xl p-4 border border-gray-200">
+                    <XProfileInput
                       onImageReady={handleImageSelect}
                       disabled={false}
                     />

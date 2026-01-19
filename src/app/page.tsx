@@ -99,7 +99,10 @@ export default function Home() {
       {/* Header */}
       <header className="shrink-0 px-4 py-4 sm:py-6">
         <div className="max-w-lg mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <button
+            onClick={handleReset}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
             <img
               src={WOJAK_IMAGE_URL}
               alt="Wojak"
@@ -108,7 +111,7 @@ export default function Home() {
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
               Wojakify
             </h1>
-          </div>
+          </button>
           <Link
             href="/about"
             className="text-sm text-gray-500 hover:text-gray-700 transition-colors"

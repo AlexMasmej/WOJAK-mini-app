@@ -150,6 +150,16 @@ export default function ResultViewer({
           New
         </button>
       </div>
+
+      {/* Buy $WOJAK button */}
+      <a
+        href="https://jup.ag/tokens/8J69rbLTzWWgUJziFY8jeu5tDwEPBwUz4pKBMr5rpump"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="w-full py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium rounded-xl flex items-center justify-center gap-2 transition-all"
+      >
+        Buy $WOJAK
+      </a>
     </div>
   );
 }

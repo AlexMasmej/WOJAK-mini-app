@@ -115,6 +115,9 @@ export default function XProfileInput({
       {/* Username Input with Paste button */}
       <div className="flex gap-2">
         <div className="relative flex-1">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium select-none">
+            @
+          </span>
           <input
             ref={inputRef}
             type="text"
@@ -124,10 +127,10 @@ export default function XProfileInput({
               setError(null);
             }}
             onKeyDown={handleKeyDown}
-            placeholder="@username or profile URL"
+            placeholder="username"
             disabled={disabled || isLoading}
             className={`
-              w-full px-4 py-3 pr-16 rounded-xl border bg-white text-sm
+              w-full pl-8 pr-16 py-3 rounded-xl border bg-white text-sm
               placeholder:text-gray-400
               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
               ${disabled || isLoading ? 'opacity-50 cursor-not-allowed' : ''}

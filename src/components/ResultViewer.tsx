@@ -39,7 +39,7 @@ export default function ResultViewer({
       if (isMobile && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({
-            text: '@WojakOnX via wojakify.co',
+            text: 'Just wojakified this image via wojakify.co\n\nBullish @WojakOnX',
             files: [file],
           });
           return; // Success, exit early
@@ -65,12 +65,12 @@ export default function ResultViewer({
       }
 
       // Open X with pre-filled text (user can paste the image)
-      const tweetText = encodeURIComponent('@WojakOnX via wojakify.co\n\n(Image copied to clipboard - paste it!)');
+      const tweetText = encodeURIComponent('Just wojakified this image via wojakify.co\n\nBullish @WojakOnX\n\n(Image copied to clipboard - paste it!)');
       window.open(`https://x.com/intent/tweet?text=${tweetText}`, '_blank');
     } catch (error) {
       console.log('Share on X failed:', error);
       // Still try to open X
-      const tweetText = encodeURIComponent('@WojakOnX via wojakify.co');
+      const tweetText = encodeURIComponent('Just wojakified this image via wojakify.co\n\nBullish @WojakOnX');
       window.open(`https://x.com/intent/tweet?text=${tweetText}`, '_blank');
     }
   }, [resultImage]);

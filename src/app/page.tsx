@@ -109,7 +109,7 @@ export default function Home() {
               className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
             />
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-              Wojakify
+              Wojakify.co
             </h1>
           </button>
           <Link
